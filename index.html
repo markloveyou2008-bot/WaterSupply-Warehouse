@@ -1842,7 +1842,7 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
       localStorage.setItem('wsw_items_data', JSON.stringify(itemsData));
     }
 
-  async function saveItem(itemData) {
+async function saveItem(itemData) {
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient
@@ -1853,10 +1853,16 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
         console.error('Error saving to Supabase:', error);
         alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
       } else {
-        // 🟢 แก้ไขจุดนี้: สั่งอัปเดตตารางและสถิติหน้าเว็บทันที
-        await loadItems(); // ถ้ายังขึ้นเตือน ให้เปลี่ยนบรรทัดนี้เป็น 2 บรรทัดล่างครับ:
-        // renderInventoryTable();
-        // updateDashboardStats();
+        const index = itemsData.findIndex(i => i.id === itemData.id);
+        if (index !== -1) {
+          itemsData[index] = itemData;
+        } else {
+          itemsData.unshift(itemData);
+        }
+
+        renderInventoryTable();
+        updateDashboardStats();
+        if (typeof renderCharts === 'function') renderCharts();
       }
     } catch(err) {
       console.error(err);
