@@ -1845,17 +1845,18 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
   async function saveItem(itemData) {
   if (supabaseClient) {
     try {
-      // ยิงข้อมูลขึ้นตาราง water_warehouse บน Cloud
       const { data, error } = await supabaseClient
         .from('water_warehouse')
-        .upsert([itemData]); // หรือใช้ .insert([itemData])
+        .upsert([itemData]);
 
       if (error) {
         console.error('Error saving to Supabase:', error);
         alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
       } else {
-        // เมื่อบันทึกบน Cloud สำเร็จ ให้โหลดข้อมูลใหม่ทันที
-        await loadItems(); 
+        // 🟢 แก้ไขจุดนี้: สั่งอัปเดตตารางและสถิติหน้าเว็บทันที
+        await loadItems(); // ถ้ายังขึ้นเตือน ให้เปลี่ยนบรรทัดนี้เป็น 2 บรรทัดล่างครับ:
+        // renderInventoryTable();
+        // updateDashboardStats();
       }
     } catch(err) {
       console.error(err);
