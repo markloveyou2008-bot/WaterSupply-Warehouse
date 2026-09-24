@@ -1842,16 +1842,28 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
       localStorage.setItem('wsw_items_data', JSON.stringify(itemsData));
     }
 
-    async function syncSaveItem(item) {
-      saveItemsToStorage();
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('water_warehouse').upsert(item);
-        } catch(err) {
-          console.error('Supabase sync error:', err);
-        }
+  async function saveItem(itemData) {
+  if (supabaseClient) {
+    try {
+      // ยิงข้อมูลขึ้นตาราง water_warehouse บน Cloud
+      const { data, error } = await supabaseClient
+        .from('water_warehouse')
+        .upsert([itemData]); // หรือใช้ .insert([itemData])
+
+      if (error) {
+        console.error('Error saving to Supabase:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+      } else {
+        // เมื่อบันทึกบน Cloud สำเร็จ ให้โหลดข้อมูลใหม่ทันที
+        await loadItems(); 
       }
+    } catch(err) {
+      console.error(err);
     }
+  } else {
+    alert('ไม่ได้เชื่อมต่อกับ Supabase');
+  }
+}
 
     function saveSupabaseConfig(e) {
       e.preventDefault();
