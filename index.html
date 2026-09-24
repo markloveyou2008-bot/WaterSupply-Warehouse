@@ -1769,12 +1769,14 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
         try {
           supabaseClient = window.supabase.createClient(url, key);
           updateDbBadge(true);
+          loadItems();
         } catch(e) {
           console.error(e);
           updateDbBadge(false);
         }
       } else {
         updateDbBadge(false);
+        loadItemsFromLocalStorage();
       }
     }
 
@@ -1794,7 +1796,7 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
     async function loadItems() {
       if (supabaseClient) {
         try {
-          const { data, error } = await supabaseClient.from('water_warehouse').select('*').order('created_at', { ascending: false });
+         const { data, error } = await supabaseClient.from('water_warehouse').select('*').order('created_at', { ascending: false });
           if (!error && data) {
             itemsData = data;
             renderInventoryTable();
