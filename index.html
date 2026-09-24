@@ -1799,39 +1799,44 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
       }
     }
 
-    async function loadItems() {
-      if (supabaseClient) {
-        try {
-         const { data, error } = await supabaseClient.from('water_warehouse').select('*').order('created_at', { ascending: false });
-          if (!error && data) {
-            itemsData = data;
-            renderInventoryTable();
-            updateDashboardStats();
-            renderCharts();
-            return;
-          }
-        } catch(err) {
-          console.warn('Supabase fetch failed, falling back to LocalStorage', err);
-        }
+   async function loadItems() {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('water_warehouse')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase fetch error:', error);
+      } else if (data) {
+        itemsData = data;
+        renderInventoryTable();
+        updateDashboardStats();
+        renderCharts();
+        return; // ดึงข้อมูลสำเร็จ ให้จบฟังก์ชันทันที ไม่ต้องไปแตะ LocalStorage
       }
+    } catch(err) {
+      console.warn('Supabase fetch failed, falling back to LocalStorage', err);
+    }
+  }
 
       // LocalStorage fallback
       const local = localStorage.getItem('wsw_items_data');
-      if (local) {
-        try {
-          itemsData = JSON.parse(local);
-        } catch(e) {
-          itemsData = INITIAL_ITEMS;
-        }
-      } else {
-        itemsData = INITIAL_ITEMS;
-        saveItemsToStorage();
-      }
-
-      renderInventoryTable();
-      updateDashboardStats();
-      renderCharts();
+  if (local) {
+    try {
+      itemsData = JSON.parse(local);
+    } catch(e) {
+      itemsData = typeof INITIAL_ITEMS !== 'undefined' ? INITIAL_ITEMS : [];
     }
+  } else {
+    itemsData = typeof INITIAL_ITEMS !== 'undefined' ? INITIAL_ITEMS : [];
+  }
+
+  renderInventoryTable();
+  updateDashboardStats();
+  if (typeof renderCharts === 'function') renderCharts();
+}
 
     function saveItemsToStorage() {
       localStorage.setItem('wsw_items_data', JSON.stringify(itemsData));
