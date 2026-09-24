@@ -1762,10 +1762,14 @@ CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CH
     }
 
     function initSupabaseFromLocal() {
-      const defaultUrl = 'https://deqxjluqajqvgzuhomev.supabase.co'; 
+      const defaultUrl = 'https://deqxjluqajqvgzuhomev.supabase.co';
   const defaultKey = 'sb_publishable_MTwLFF2XmWFz6z_M5mKp5A_O7E3vGqC';
-      const url = localStorage.getItem('wsw_sb_url') || defaultUrl;
-const key = localStorage.getItem('wsw_sb_key') || defaultKey;
+
+  let url = localStorage.getItem('wsw_sb_url');
+  let key = localStorage.getItem('wsw_sb_key');
+
+  if (!url || url.trim() === '') url = defaultUrl;
+  if (!key || key.trim() === '') key = defaultKey;
 
       if (url && key && window.supabase) {
         try {
