@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50 text-slate-800">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WATER SUPPLY WAREHOUSE - ระบบบริหารจัดการพัสดุ</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            insta: {
+              purple: '#833AB4',
+              red: '#FD1D1D',
+              orange: '#F56040',
+              yellow: '#FCAF45',
+              pink: '#E1306C',
+            },
+            critical: '#DC2626',
+            warning: '#EA580C',
+          },
+          backgroundImage: {
+            'insta-gradient': 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            'insta-subtle': 'linear-gradient(135deg, rgba(254,242,242,0.7) 0%, rgba(253,242,248,0.7) 50%, rgba(240,249,255,0.7) 100%)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Kanit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SheetJS (XLSX Import/Export) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- QRCode.js (Generator) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- HTML5 QR Code Scanner -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      font-family: 'Kanit', 'Inter', sans-serif;
+    }
+    .insta-text-gradient {
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(241, 245, 249, 0.8);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(203, 213, 225, 0.8);
+      border-radius: 9999px;
+    }
+    .story-ring {
+      padding: 2.5px;
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      border-radius: 9999px;
+    }
+    #html5-qrcode-button-camera-permission, 
+    #html5-qrcode-button-camera-start, 
+    #html5-qrcode-button-camera-stop {
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743) !important;
+      color: white !important;
+      border: none !important;
+      padding: 6px 16px !important;
+      border-radius: 8px !important;
+      margin: 4px !important;
+      font-weight: 500 !important;
+    }
+    #reader video {
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-100/70 text-slate-800 flex flex-col md:flex-row overflow-hidden selection:bg-pink-500 selection:text-white">
+
+  <div id="app" class="flex flex-col md:flex-row w-full h-full relative">
+
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white/90 backdrop-blur-md p-4 justify-between shrink-0 shadow-sm">
+      <div class="space-y-6">
+        <!-- Logo Header -->
+        <div class="px-3 py-2 flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-insta-gradient flex items-center justify-center shadow-md shadow-pink-500/20 shrink-0">
+            <i data-lucide="droplets" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight tracking-wide insta-text-gradient uppercase">Water Supply</h1>
+            <p class="text-[10px] font-semibold text-slate-400 tracking-wider">WAREHOUSE MANAGEMENT</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="space-y-1.5">
+          <button onclick="switchTab('feed')" id="nav-feed" class="nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            <span>ฟีด / แดชบอร์ด</span>
+          </button>
+          
+          <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <i data-lucide="package" class="w-5 h-5"></i>
+            <span>จัดการรายการพัสดุ</span>
+          </button>
+
+          <button onclick="switchTab('report')" id="nav-report" class="nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+            <span>รายงานพัสดุคงเหลือ</span>
+          </button>
+
+          <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+            <i data-lucide="database" class="w-5 h-5"></i>
+            <span>เชื่อมต่อ Supabase</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Quick Action & DB Status Footer -->
+      <div class="space-y-3 pt-4 border-t border-slate-200">
+        <button onclick="openScanModal()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-medium flex items-center justify-center space-x-2 shadow-md shadow-pink-500/20 transition duration-200">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>สแกน QR Code</span>
+        </button>
+
+        <!-- Database Connection Badge -->
+        <div id="db-status-badge" class="px-3 py-2 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-between text-xs">
+          <span class="text-slate-500">สถานะฐานข้อมูล:</span>
+          <span id="db-status-text" class="flex items-center space-x-1.5 text-amber-600 font-medium">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span>LocalStorage</span>
+          </span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MOBILE TOP BAR -->
+    <header class="md:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 shrink-0 shadow-sm">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-insta-gradient flex items-center justify-center shrink-0 shadow-sm">
+          <i data-lucide="droplets" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-bold text-base tracking-wide insta-text-gradient uppercase">WATER SUPPLY</span>
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <button onclick="openScanModal()" class="p-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+          <i data-lucide="qr-code" class="w-5 h-5"></i>
+        </button>
+        <button onclick="switchTab('settings')" class="p-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-6 pb-20 md:pb-6 space-y-6">
+      
+      <!-- TAB 1: FEED / DASHBOARD -->
+      <section id="tab-feed" class="tab-content space-y-6">
+        
+        <!-- Instagram Story Highlights -->
+        <div>
+          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">สรุปสถานะพัสดุ (Highlights)</h2>
+          <div class="flex items-center space-x-4 overflow-x-auto pb-2 custom-scrollbar">
+            
+            <!-- Story Item: Total -->
+            <button onclick="filterReportByStatus('all')" class="flex flex-col items-center space-y-1.5 shrink-0 group">
+              <div class="story-ring p-[2.5px] transition transform group-hover:scale-105 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-white flex flex-col items-center justify-center">
+                  <i data-lucide="boxes" class="w-5 h-5 text-indigo-600"></i>
+                  <span id="stat-total-count" class="text-sm font-bold text-slate-800 mt-0.5">0</span>
+                </div>
+              </div>
+              <span class="text-xs font-medium text-slate-600">พัสดุทั้งหมด</span>
+            </button>
+
+            <!-- Story Item: Normal -->
+            <button onclick="filterReportByStatus('normal')" class="flex flex-col items-center space-y-1.5 shrink-0 group">
+              <div class="p-[2.5px] rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 transition transform group-hover:scale-105 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-white flex flex-col items-center justify-center">
+                  <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+                  <span id="stat-normal-count" class="text-sm font-bold text-slate-800 mt-0.5">0</span>
+                </div>
+              </div>
+              <span class="text-xs font-medium text-slate-600">ปกติ</span>
+            </button>
+
+            <!-- Story Item: Warning -->
+            <button onclick="filterReportByStatus('warning')" class="flex flex-col items-center space-y-1.5 shrink-0 group">
+              <div class="p-[2.5px] rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 transition transform group-hover:scale-105 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-white flex flex-col items-center justify-center">
+                  <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500"></i>
+                  <span id="stat-warning-count" class="text-sm font-bold text-slate-800 mt-0.5">0</span>
+                </div>
+              </div>
+              <span class="text-xs font-medium text-slate-600">ใกล้หมด (เตือน)</span>
+            </button>
+
+            <!-- Story Item: Critical -->
+            <button onclick="filterReportByStatus('critical')" class="flex flex-col items-center space-y-1.5 shrink-0 group">
+              <div class="p-[2.5px] rounded-full bg-gradient-to-tr from-red-600 to-rose-500 transition transform group-hover:scale-105 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-white flex flex-col items-center justify-center">
+                  <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-600"></i>
+                  <span id="stat-critical-count" class="text-sm font-bold text-slate-800 mt-0.5">0</span>
+                </div>
+              </div>
+              <span class="text-xs font-medium text-slate-600">วิกฤต</span>
+            </button>
+
+            <!-- Story Item: Out of stock -->
+            <button onclick="filterReportByStatus('out')" class="flex flex-col items-center space-y-1.5 shrink-0 group">
+              <div class="p-[2.5px] rounded-full bg-slate-300 transition transform group-hover:scale-105 shadow-sm">
+                <div class="w-16 h-16 rounded-full bg-white border-2 border-white flex flex-col items-center justify-center">
+                  <i data-lucide="x-circle" class="w-5 h-5 text-slate-500"></i>
+                  <span id="stat-out-count" class="text-sm font-bold text-slate-800 mt-0.5">0</span>
+                </div>
+              </div>
+              <span class="text-xs font-medium text-slate-600">พัสดุหมด</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Quick Action Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onclick="openFormModal()" class="flex items-center space-x-3 p-4 rounded-2xl bg-white border border-slate-200 hover:border-pink-500/50 hover:bg-slate-50/80 transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
+              <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <div class="font-semibold text-sm text-slate-800">เพิ่มพัสดุใหม่</div>
+              <div class="text-xs text-slate-500">บันทึกพัสดุเข้าคลัง</div>
+            </div>
+          </button>
+
+          <button onclick="triggerExcelImport()" class="flex items-center space-x-3 p-4 rounded-2xl bg-white border border-slate-200 hover:border-emerald-500/50 hover:bg-slate-50/80 transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
+              <i data-lucide="file-up" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <div class="font-semibold text-sm text-slate-800">นำเข้าไฟล์ Excel/CSV</div>
+              <div class="text-xs text-slate-500">อัปโหลดข้อมูลจำนวนมาก</div>
+            </div>
+          </button>
+
+          <button onclick="exportToExcel()" class="flex items-center space-x-3 p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-500/50 hover:bg-slate-50/80 transition group shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+              <i data-lucide="download" class="w-5 h-5"></i>
+            </div>
+            <div class="text-left">
+              <div class="font-semibold text-sm text-slate-800">ส่งออกข้อมูล Excel</div>
+              <div class="text-xs text-slate-500">ดาวน์โหลดรายงานสมบูรณ์</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Charts Dashboard Feed Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Chart 1: Category Breakdown -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="pie-chart" class="w-5 h-5 text-pink-600"></i>
+                <h3 class="font-semibold text-slate-800">สัดส่วนพัสดุตามประเภท</h3>
+              </div>
+              <span class="text-xs text-slate-400">หมวดหมู่ทั้งหมด</span>
+            </div>
+            <div class="relative h-64 flex items-center justify-center">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Alert Status Distribution -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="activity" class="w-5 h-5 text-amber-500"></i>
+                <h3 class="font-semibold text-slate-800">กระจายสถานะแจ้งเตือนพัสดุ</h3>
+              </div>
+              <span class="text-xs text-slate-400">เฝ้าระวัง</span>
+            </div>
+            <div class="relative h-64 flex items-center justify-center">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Items Feed Card -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="sparkles" class="w-5 h-5 text-rose-500"></i>
+              <h3 class="font-semibold text-slate-800">รายการพัสดุอัปเดตล่าสุด</h3>
+            </div>
+            <button onclick="switchTab('inventory')" class="text-xs text-pink-600 hover:text-pink-700 font-semibold">ดูทั้งหมด &rarr;</button>
+          </div>
+
+          <div id="recent-feed-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamic Feed Cards rendered here -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: INVENTORY MANAGEMENT -->
+      <section id="tab-inventory" class="tab-content hidden space-y-5">
+        
+        <!-- Header Controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+              <i data-lucide="package-search" class="w-5 h-5 text-pink-600"></i>
+              <span>คลังพัสดุ Water Supply</span>
+            </h2>
+            <p class="text-xs text-slate-500">จัดการ เพิ่ม แก้ไข และพิมพ์ QR Code รายการพัสดุ</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openFormModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-medium text-sm flex items-center space-x-2 shadow-md shadow-pink-500/20">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>เพิ่มพัสดุ</span>
+            </button>
+
+            <label class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-sm font-medium flex items-center space-x-2 cursor-pointer transition">
+              <i data-lucide="upload" class="w-4 h-4 text-emerald-600"></i>
+              <span>นำเข้า Excel</span>
+              <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+            </label>
+
+            <button onclick="exportToExcel()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-sm font-medium flex items-center space-x-2 transition">
+              <i data-lucide="download" class="w-4 h-4 text-blue-600"></i>
+              <span>ส่งออก Excel</span>
+            </button>
+
+            <button id="btn-delete-selected" onclick="deleteSelectedItems()" class="hidden px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-sm font-medium flex items-center space-x-1.5 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>ลบที่เลือก (<span id="selected-count">0</span>)</span>
+            </button>
+
+            <button onclick="confirmClearAll()" class="px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 text-sm font-medium flex items-center space-x-1.5 transition">
+              <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+              <span>ลบทั้งหมด</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Pills Bar & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center space-x-2 w-full sm:w-auto overflow-hidden">
+            <div class="flex items-center space-x-1 overflow-x-auto pb-1 custom-scrollbar flex-1 sm:flex-initial" id="category-pills">
+              <!-- Category buttons rendered dynamically -->
+            </div>
+            <button onclick="openCategoryModal()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center space-x-1.5 shrink-0 transition shadow-sm hover:border-pink-300">
+              <i data-lucide="folder-cog" class="w-3.5 h-3.5 text-pink-600"></i>
+              <span>จัดการหมวดหมู่</span>
+            </button>
+          </div>
+
+          <div class="relative w-full sm:w-64 shrink-0">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="inventory-search" placeholder="ค้นหารหัส, ชื่อ, ตำแหน่ง..." oninput="renderInventoryTable()" class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-pink-500 shadow-sm">
+          </div>
+        </div>
+
+        <!-- Inventory Table Container -->
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm text-slate-700">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5 w-10 text-center">
+                    <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this)" class="rounded bg-slate-100 border-slate-300 text-pink-600 focus:ring-pink-500">
+                  </th>
+                  <th class="p-3.5">พัสดุ / หมายเลข</th>
+                  <th class="p-3.5">หมวดหมู่</th>
+                  <th class="p-3.5">ตำแหน่งจัดเก็บ</th>
+                  <th class="p-3.5 text-right">จำนวนคงเหลือ</th>
+                  <th class="p-3.5 text-center">เกณฑ์เตือน (เตือน/วิกฤต)</th>
+                  <th class="p-3.5 text-center">สถานะ</th>
+                  <th class="p-3.5 text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body" class="divide-y divide-slate-100">
+                <!-- Rows generated via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="inventory-empty" class="hidden p-8 text-center text-slate-400">
+            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+            <p>ไม่พบรายการพัสดุในคลัง</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 3: INVENTORY REPORT & ANALYTICS -->
+      <section id="tab-report" class="tab-content hidden space-y-6">
+        
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl space-y-4 shadow-sm">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-amber-500"></i>
+                <span>รายงานสรุปและตรวจสอบพัสดุคงเหลือ</span>
+              </h2>
+              <p class="text-xs text-slate-500">คัดกรองตามระดับแจ้งเตือน เรียงลำดับจำนวนคงเหลือ</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-3">
+              <!-- Filter Status -->
+              <select id="report-filter-status" onchange="renderReportTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-pink-500">
+                <option value="all">สถานะทั้งหมด</option>
+                <option value="normal">ปกติ (Normal)</option>
+                <option value="warning">เตือนใกล้หมด (Warning)</option>
+                <option value="critical">วิกฤต (Critical)</option>
+                <option value="out">พัสดุหมด (Out of stock)</option>
+              </select>
+
+              <!-- Filter Sort Order -->
+              <select id="report-sort-qty" onchange="renderReportTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:border-pink-500">
+                <option value="asc">จำนวนคงเหลือ: น้อย &rarr; มาก</option>
+                <option value="desc">จำนวนคงเหลือ: มาก &rarr; น้อย</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Search Bar for Report -->
+          <div class="relative w-full">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="report-search" placeholder="ค้นหาด้วยหมายเลขพัสดุ, ชื่อพัสดุ, หรือประเภท..." oninput="renderReportTable()" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-pink-500">
+          </div>
+        </div>
+
+        <!-- Report Table Grid -->
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-sm text-slate-700">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">หมายเลขพัสดุ</th>
+                  <th class="p-3.5">ชื่อพัสดุ</th>
+                  <th class="p-3.5">หมวดหมู่</th>
+                  <th class="p-3.5">ตำแหน่ง</th>
+                  <th class="p-3.5 text-right">จำนวนคงเหลือ</th>
+                  <th class="p-3.5 text-center">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="report-table-body" class="divide-y divide-slate-100">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 4: SETTINGS & SUPABASE CONNECT -->
+      <section id="tab-settings" class="tab-content hidden space-y-6">
+        
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-3xl mx-auto space-y-6">
+          <div class="flex items-center space-x-3 pb-4 border-b border-slate-200">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+              <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-slate-800">ตั้งค่าการเชื่อมต่อ Supabase</h2>
+              <p class="text-xs text-slate-500">เชื่อมต่อฐานข้อมูล Cloud หรือใช้งานบน LocalStorage ในเบราว์เซอร์</p>
+            </div>
+          </div>
+
+          <!-- Form inputs -->
+          <form onsubmit="saveSupabaseConfig(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1.5">Supabase Project URL</label>
+              <input type="url" id="sb-url-input" placeholder="https://your-project.supabase.co" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-pink-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1.5">Supabase Anon Key</label>
+              <input type="password" id="sb-key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-pink-500">
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-500">โหมดปัจจุบัน:</span>
+                <span id="settings-db-mode" class="font-semibold text-amber-600">LocalStorage Mode</span>
+              </div>
+
+              <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <button type="button" onclick="disconnectSupabase()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition">
+                  ใช้ LocalStorage
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-sm font-medium shadow-md shadow-pink-500/20 hover:opacity-90 transition">
+                  บันทึก & เชื่อมต่อ
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- SQL Setup Generator -->
+          <div class="mt-8 pt-6 border-t border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-sm text-slate-800">1-Click SQL Script สำหรับตั้งค่า Supabase Table</h3>
+                <p class="text-xs text-slate-500">คัดลอกโค้ดนี้วางใน SQL Editor ของ Supabase เพื่อสร้างตาราง `water_warehouse`</p>
+              </div>
+              <button onclick="copySqlScript()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-pink-600 text-xs font-medium flex items-center space-x-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="copy-sql-text">คัดลอก SQL Script</span>
+              </button>
+            </div>
+
+            <pre class="bg-slate-900 p-4 rounded-xl text-xs text-emerald-400 font-mono overflow-x-auto border border-slate-800 max-h-48 custom-scrollbar"><code>-- สร้างตารางพัสดุประปา WATER SUPPLY WAREHOUSE
+CREATE TABLE IF NOT EXISTS water_warehouse (
+    id UUID PRIMARY KEY DEFAULT gen_random_policy_uuid(),
+    code VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL DEFAULT 'อุปกรณ์ทั่วไป',
+    location VARCHAR(100) DEFAULT 'คลังใหญ่',
+    unit VARCHAR(50) DEFAULT 'ชิ้น',
+    quantity INT DEFAULT 0,
+    warning_threshold INT DEFAULT 10,
+    critical_threshold INT DEFAULT 3,
+    usage_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- เปิดสิทธิ์ Row Level Security (RLS)
+ALTER TABLE water_warehouse ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CHECK (true);
+</code></pre>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-lg border-t border-slate-200 flex items-center justify-around z-40 px-2 shadow-lg">
+      <button onclick="switchTab('feed')" id="mobile-nav-feed" class="flex flex-col items-center justify-center w-full h-full text-pink-600">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <span class="text-[10px] mt-1 font-medium">ฟีด</span>
+      </button>
+
+      <button onclick="switchTab('inventory')" id="mobile-nav-inventory" class="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-slate-800">
+        <i data-lucide="package" class="w-5 h-5"></i>
+        <span class="text-[10px] mt-1 font-medium">พัสดุ</span>
+      </button>
+
+      <button onclick="switchTab('report')" id="mobile-nav-report" class="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-slate-800">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+        <span class="text-[10px] mt-1 font-medium">รายงาน</span>
+      </button>
+
+      <button onclick="switchTab('settings')" id="mobile-nav-settings" class="flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-slate-800">
+        <i data-lucide="database" class="w-5 h-5"></i>
+        <span class="text-[10px] mt-1 font-medium">ตั้งค่า</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- MODAL: ADD / EDIT ITEM FORM -->
+  <div id="modal-form" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="modal-form-title" class="text-base font-bold text-slate-800 flex items-center space-x-2">
+          <i data-lucide="edit-3" class="w-5 h-5 text-pink-600"></i>
+          <span>เพิ่มพัสดุใหม่</span>
+        </h3>
+        <button onclick="closeFormModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="item-form" onsubmit="handleFormSubmit(event)" class="p-5 overflow-y-auto custom-scrollbar space-y-4 flex-1">
+        <input type="hidden" id="form-item-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Code -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเลข/รหัสพัสดุ *</label>
+            <input type="text" id="form-code" required placeholder="เช่น PVC-001" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Name with Auto-Categorization Trigger -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อพัสดุ *</label>
+            <input type="text" id="form-name" required placeholder="เช่น ท่อ PVC 1/2 นิ้ว" oninput="autoDetectCategoryFromInput(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Category -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-slate-700">หมวดหมู่/ประเภท *</label>
+              <div class="flex items-center space-x-2">
+                <span id="auto-cat-badge" class="hidden text-[10px] font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200 animate-pulse">
+                  ✨ วิเคราะห์จากชื่อพัสดุ
+                </span>
+                <button type="button" onclick="openCategoryModal()" class="text-[11px] font-medium text-pink-600 hover:text-pink-700 underline flex items-center space-x-0.5">
+                  <i data-lucide="plus-circle" class="w-3 h-3"></i>
+                  <span>จัดการหมวดหมู่</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex space-x-1.5">
+              <select id="form-category-select" onchange="onCategoryManualChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+                <option value="PVC">PVC</option>
+                <option value="เหล็ก">เหล็ก</option>
+                <option value="PB">PB</option>
+                <option value="PE">PE</option>
+                <option value="อุปกรณ์ไฟฟ้า">อุปกรณ์ไฟฟ้า</option>
+                <option value="custom">+ เพิ่มประเภทใหม่...</option>
+              </select>
+            </div>
+            <input type="text" id="form-category-custom" placeholder="ระบุประเภทใหม่..." class="hidden w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่งที่จัดเก็บ</label>
+            <input type="text" id="form-location" placeholder="เช่น ชั้น A-1, โซน B" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Unit -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยนับ *</label>
+            <input type="text" id="form-unit" required placeholder="ชิ้น, ท่อ, ตัว, เส้น" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Quantity -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนคงเหลือปัจจุบัน *</label>
+            <input type="number" id="form-quantity" min="0" required placeholder="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+          </div>
+
+          <!-- Threshold Warning (Orange) -->
+          <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
+            <label class="block text-xs font-semibold text-amber-700 mb-1 flex items-center justify-between">
+              <span>ขั้นต่ำเตือนใกล้หมด (Warning)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            </label>
+            <input type="number" id="form-warning-threshold" min="0" value="10" required class="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-amber-500 focus:outline-none">
+            <p class="text-[10px] text-amber-600 mt-1">แจ้งเตือนสถานะสีส้ม</p>
+          </div>
+
+          <!-- Threshold Critical (Dark Orange/Red) -->
+          <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
+            <label class="block text-xs font-semibold text-rose-700 mb-1 flex items-center justify-between">
+              <span>ขั้นต่ำเตือนวิกฤต (Critical)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+            </label>
+            <input type="number" id="form-critical-threshold" min="0" value="3" required class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-rose-500 focus:outline-none">
+            <p class="text-[10px] text-rose-600 mt-1">แจ้งเตือนสถานะสีส้มเข้ม/แดง</p>
+          </div>
+        </div>
+
+        <!-- Usage notes -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">สถิติการใช้งาน / หมายเหตุเพิ่มเติม</label>
+          <textarea id="form-usage-notes" rows="2" placeholder="เช่น ใช้งานประมาณ 5 ชิ้นต่อสัปดาห์..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none custom-scrollbar"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-sm font-medium shadow-md shadow-pink-500/20">บันทึกพัสดุ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QR CODE DISPLAY & PRINT -->
+  <div id="modal-qr" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">QR Code พัสดุ</h3>
+        <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div id="qr-code-preview" class="p-4 bg-slate-50 rounded-2xl inline-block shadow-inner mx-auto my-2 border border-slate-100"></div>
+
+      <div>
+        <div id="qr-modal-title" class="font-bold text-slate-800 text-lg"></div>
+        <div id="qr-modal-code" class="text-xs text-pink-600 font-mono font-semibold mt-0.5"></div>
+        <div id="qr-modal-details" class="text-xs text-slate-500 mt-2"></div>
+      </div>
+
+      <div class="flex items-center justify-center space-x-3 pt-2">
+        <button onclick="downloadQrCode()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium flex items-center space-x-1.5">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>ดาวน์โหลด</span>
+        </button>
+        <button onclick="printQrCode()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 text-white text-xs font-medium flex items-center space-x-1.5 shadow-md shadow-pink-500/20">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>พิมพ์ QR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QR SCANNER CAMERA / FILE -->
+  <div id="modal-scan" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+          <i data-lucide="qr-code" class="w-5 h-5 text-pink-600"></i>
+          <span>สแกน QR Code พัสดุ</span>
+        </h3>
+        <button onclick="closeScanModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div id="reader" class="overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 min-h-[220px]"></div>
+
+      <div class="pt-2">
+        <label class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl cursor-pointer inline-flex items-center space-x-1.5 transition">
+          <i data-lucide="image" class="w-4 h-4 text-pink-600"></i>
+          <span>อัปโหลดรูปภาพ QR Code</span>
+          <input type="file" accept="image/*" class="hidden" onchange="handleQrFileInput(event)">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CATEGORY & TYPE MANAGEMENT -->
+  <div id="modal-categories" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+          <i data-lucide="folder-cog" class="w-5 h-5 text-pink-600"></i>
+          <span>จัดการหมวดหมู่ / ประเภทพัสดุ</span>
+        </h3>
+        <button onclick="closeCategoryModal()" class="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto custom-scrollbar space-y-5 flex-1">
+        <!-- Add New Category Form -->
+        <form onsubmit="handleAddCategorySubmit(event)" class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-3">
+          <label class="block text-xs font-semibold text-slate-700">เพิ่มหมวดหมู่ใหม่</label>
+          <div class="flex space-x-2">
+            <input type="text" id="new-cat-input" required placeholder="ชื่อหมวดหมู่ใหม่ (เช่น ท่อ HDPE, วาล์วผีเสื้อ)" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 focus:border-pink-500 focus:outline-none">
+            <button type="submit" class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-medium text-xs rounded-xl shadow-sm shrink-0 flex items-center space-x-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>เพิ่มหมวดหมู่</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Categories List -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">รายการหมวดหมู่ทั้งหมด</h4>
+          <div id="category-list-container" class="space-y-2">
+            <!-- Dynamic category rows -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 text-right">
+        <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-100">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-20 md:bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl">
+    <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toast-msg" class="text-xs font-medium">ดำเนินการสำเร็จ</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let itemsData = [];
+    let selectedItemIds = new Set();
+    let activeCategory = 'all';
+    let supabaseClient = null;
+    let html5QrScanner = null;
+    let categoryChartInstance = null;
+    let statusChartInstance = null;
+    let isManualCategorySet = false;
+    let currentQrItemId = null;
+    let customCategories = [];
+
+    const DEFAULT_CATEGORIES = ['PVC', 'เหล็ก', 'PB', 'PE', 'อุปกรณ์ไฟฟ้า'];
+
+    // Sample initial dataset
+    const INITIAL_ITEMS = [
+      { id: '1', code: 'PVC-001', name: 'ท่อ PVC 1/2 นิ้ว (ชั้น 8.5)', category: 'PVC', location: 'คลังใหญ่ A1', unit: 'เส้น', quantity: 25, warning_threshold: 10, critical_threshold: 5, usage_notes: 'ใช้งานประมาณ 10 เส้น/สัปดาห์' },
+      { id: '2', code: 'PVC-002', name: 'ข้อต่อสามทาง PVC 1/2 นิ้ว', category: 'PVC', location: 'ชั้น B2', unit: 'ตัว', quantity: 8, warning_threshold: 15, critical_threshold: 5, usage_notes: 'ใช้บ่อยงานซ่อมท่อประปาเล็ก' },
+      { id: '3', code: 'STL-001', name: 'ประตูน้ำเหล็กหล่อ Gate Valve 2 นิ้ว', category: 'เหล็ก', location: 'โซนเหล็ก C1', unit: 'ตัว', quantity: 2, warning_threshold: 5, critical_threshold: 3, usage_notes: 'งานซ่อมท่อประธาน' },
+      { id: '4', code: 'PE-010', name: 'ท่อ PE ขนาด 20 มม. (PN 10)', category: 'PE', location: 'คลังกลาง D3', unit: 'ม้วน', quantity: 0, warning_threshold: 5, critical_threshold: 2, usage_notes: 'งานขยายเขตประปาหมู่บ้าน' },
+      { id: '5', code: 'PB-005', name: 'ท่อ PB ขนาด 15 มม.', category: 'PB', location: 'ชั้น B1', unit: 'เส้น', quantity: 18, warning_threshold: 10, critical_threshold: 4, usage_notes: 'ติดตั้งมาตรวัดน้ำบ้านใหม่' },
+      { id: '6', code: 'ELC-101', name: 'สวิตช์ลูกลอยไฟฟ้าปั๊มน้ำ', category: 'อุปกรณ์ไฟฟ้า', location: 'ห้องตู้ไฟ E1', unit: 'ชุด', quantity: 4, warning_threshold: 8, critical_threshold: 3, usage_notes: 'ควบคุมระดับน้ำถังพัก' }
+    ];
+
+    function switchTab(tabId) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+      // Show selected tab
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) targetTab.classList.remove('hidden');
+
+      // Update Desktop Nav styles
+      const navKeys = ['feed', 'inventory', 'report', 'settings'];
+      navKeys.forEach(k => {
+        const dNav = document.getElementById(`nav-${k}`);
+        const mNav = document.getElementById(`mobile-nav-${k}`);
+
+        if (k === tabId) {
+          if (dNav) dNav.className = 'nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-semibold bg-pink-50 text-pink-600 shadow-sm border border-pink-100';
+          if (mNav) mNav.className = 'flex flex-col items-center justify-center w-full h-full text-pink-600 font-semibold';
+        } else {
+          if (dNav) dNav.className = 'nav-btn w-full flex items-center space-x-3.5 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900';
+          if (mNav) mNav.className = 'flex flex-col items-center justify-center w-full h-full text-slate-500 hover:text-slate-800 font-medium';
+        }
+      });
+
+      // Refresh content views depending on tab
+      if (tabId === 'feed') {
+        updateDashboardStats();
+        renderCharts();
+        renderRecentFeed();
+      } else if (tabId === 'inventory') {
+        renderCategoryPills();
+        renderInventoryTable();
+      } else if (tabId === 'report') {
+        renderReportTable();
+      }
+      lucide.createIcons();
+    }
+
+    function getCombinedCategories() {
+      const set = new Set([...DEFAULT_CATEGORIES, ...customCategories]);
+      itemsData.forEach(item => {
+        if (item.category && item.category !== 'custom') set.add(item.category);
+      });
+      return Array.from(set);
+    }
+
+    function loadCustomCategories() {
+      const saved = localStorage.getItem('wsw_categories_data');
+      if (saved) {
+        try {
+          customCategories = JSON.parse(saved);
+        } catch(e) {
+          customCategories = [];
+        }
+      }
+    }
+
+    function saveCustomCategories() {
+      localStorage.setItem('wsw_categories_data', JSON.stringify(customCategories));
+    }
+
+    function openCategoryModal() {
+      renderCategoryListModal();
+      document.getElementById('modal-categories').classList.remove('hidden');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('modal-categories').classList.add('hidden');
+      updateCategorySelectOptions();
+      renderCategoryPills();
+    }
+
+    function renderCategoryListModal() {
+      const container = document.getElementById('category-list-container');
+      if (!container) return;
+
+      const categories = getCombinedCategories();
+      container.innerHTML = '';
+
+      categories.forEach(cat => {
+        const itemQty = itemsData.filter(i => i.category === cat).length;
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white shadow-sm';
+        row.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-xs">
+              <i data-lucide="folder" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="font-bold text-sm text-slate-800">${cat}</div>
+              <div class="text-[11px] text-slate-500">มีพัสดุในคลัง ${itemQty} รายการ</div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button onclick="promptEditCategory('${cat}')" title="แก้ไขชื่อหมวดหมู่" class="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition">
+              <i data-lucide="edit-2" class="w-4 h-4"></i>
+            </button>
+            <button onclick="confirmDeleteCategory('${cat}', ${itemQty})" title="ลบหมวดหมู่" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      lucide.createIcons();
+    }
+
+    function handleAddCategorySubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('new-cat-input');
+      const newCat = input.value.trim();
+      if (!newCat) return;
+
+      const allCats = getCombinedCategories();
+      if (allCats.includes(newCat)) {
+        showToast('หมวดหมู่นี้มีอยู่ในระบบแล้ว');
+        return;
+      }
+
+      customCategories.push(newCat);
+      saveCustomCategories();
+      input.value = '';
+      showToast(`เพิ่มหมวดหมู่ "${newCat}" เรียบร้อย`);
+      renderCategoryListModal();
+      updateCategorySelectOptions();
+      renderCategoryPills();
+    }
+
+    async function promptEditCategory(oldCat) {
+      const newCat = prompt(`แก้ไขชื่อหมวดหมู่ "${oldCat}" เป็น:`, oldCat);
+      if (!newCat || newCat.trim() === '' || newCat.trim() === oldCat) return;
+
+      const trimmedNew = newCat.trim();
+      const allCats = getCombinedCategories();
+      if (allCats.includes(trimmedNew) && trimmedNew !== oldCat) {
+        showToast('ชื่อหมวดหมู่นี้มีอยู่ในระบบแล้ว');
+        return;
+      }
+
+      const custIdx = customCategories.indexOf(oldCat);
+      if (custIdx >= 0) {
+        customCategories[custIdx] = trimmedNew;
+      } else {
+        customCategories.push(trimmedNew);
+      }
+      saveCustomCategories();
+
+      let updatedCount = 0;
+      for (let item of itemsData) {
+        if (item.category === oldCat) {
+          item.category = trimmedNew;
+          await syncSaveItem(item);
+          updatedCount++;
+        }
+      }
+
+      if (activeCategory === oldCat) activeCategory = trimmedNew;
+
+      showToast(`อัปเดตชื่อหมวดหมู่เป็น "${trimmedNew}" เรียบร้อย (${updatedCount} รายการเปลี่ยนตาม)`);
+      renderCategoryListModal();
+      updateCategorySelectOptions();
+      renderCategoryPills();
+      renderInventoryTable();
+    }
+
+    async function confirmDeleteCategory(catName, itemQty) {
+      if (itemQty > 0) {
+        if (!confirm(`หมวดหมู่ "${catName}" มีพัสดุอยู่ ${itemQty} รายการ\nการลบหมวดหมู่นี้ จะเปลี่ยนหมวดหมู่ของพัสดุดังกล่าวเป็น "อุปกรณ์ทั่วไป"\nคุณแน่ใจหรือไม่?`)) {
+          return;
+        }
+        for (let item of itemsData) {
+          if (item.category === catName) {
+            item.category = 'อุปกรณ์ทั่วไป';
+            await syncSaveItem(item);
+          }
+        }
+      } else {
+        if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${catName}"?`)) return;
+      }
+
+      customCategories = customCategories.filter(c => c !== catName);
+      saveCustomCategories();
+
+      if (activeCategory === catName) activeCategory = 'all';
+
+      showToast(`ลบหมวดหมู่ "${catName}" เรียบร้อย`);
+      renderCategoryListModal();
+      updateCategorySelectOptions();
+      renderCategoryPills();
+      renderInventoryTable();
+    }
+
+    function updateCategorySelectOptions() {
+      const select = document.getElementById('form-category-select');
+      if (!select) return;
+
+      const categories = getCombinedCategories();
+      const currentVal = select.value;
+      select.innerHTML = '';
+
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+
+      const customOpt = document.createElement('option');
+      customOpt.value = 'custom';
+      customOpt.textContent = '+ เพิ่มประเภทใหม่...';
+      select.appendChild(customOpt);
+
+      if (categories.includes(currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    function renderCategoryPills() {
+      const container = document.getElementById('category-pills');
+      if (!container) return;
+
+      const categories = ['all', ...getCombinedCategories()];
+
+      container.innerHTML = '';
+      categories.forEach(cat => {
+        const isSelected = activeCategory === cat;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => {
+          activeCategory = cat;
+          renderInventoryTable();
+        };
+        btn.className = isSelected 
+          ? 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-white shadow-sm shrink-0'
+          : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shrink-0';
+        btn.textContent = cat === 'all' ? 'ทั้งหมด' : cat;
+        container.appendChild(btn);
+      });
+    }
+
+    function autoDetectCategoryFromInput(nameVal) {
+      if (isManualCategorySet || !nameVal.trim()) return;
+
+      const lower = nameVal.toLowerCase();
+      let detected = null;
+
+      if (lower.includes('pvc') || lower.includes('พีวีซี')) detected = 'PVC';
+      else if (lower.includes('เหล็ก') || lower.includes('gate valve') || lower.includes('ประตูน้ำ') || lower.includes('หล่อ')) detected = 'เหล็ก';
+      else if (lower.includes('pe') || lower.includes('hdpe') || lower.includes('พีอี')) detected = 'PE';
+      else if (lower.includes('pb') || lower.includes('พีบี')) detected = 'PB';
+      else if (lower.includes('ไฟ') || lower.includes('สวิตช์') || lower.includes('ปั๊ม') || lower.includes('เบรกเกอร์') || lower.includes('สายไฟ')) detected = 'อุปกรณ์ไฟฟ้า';
+
+      if (detected) {
+        const select = document.getElementById('form-category-select');
+        select.value = detected;
+        document.getElementById('form-category-custom').classList.add('hidden');
+        document.getElementById('auto-cat-badge').classList.remove('hidden');
+      }
+    }
+
+    function onCategoryManualChange() {
+      const select = document.getElementById('form-category-select');
+      const customInput = document.getElementById('form-category-custom');
+      isManualCategorySet = true;
+      document.getElementById('auto-cat-badge').classList.add('hidden');
+
+      if (select.value === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+      }
+    }
+
+    function getItemStatus(qty, warningTh, criticalTh) {
+      if (qty <= 0) return { status: 'out', label: 'พัสดุหมด', color: 'bg-slate-100 text-slate-600 border-slate-200' };
+      if (qty <= criticalTh) return { status: 'critical', label: 'วิกฤต', color: 'bg-rose-50 text-rose-600 border-rose-200 font-semibold' };
+      if (qty <= warningTh) return { status: 'warning', label: 'เตือนใกล้หมด', color: 'bg-amber-50 text-amber-600 border-amber-200 font-medium' };
+      return { status: 'normal', label: 'ปกติ', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' };
+    }
+
+    function updateDashboardStats() {
+      let normal = 0, warning = 0, critical = 0, out = 0;
+
+      itemsData.forEach(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3).status;
+        if (st === 'normal') normal++;
+        else if (st === 'warning') warning++;
+        else if (st === 'critical') critical++;
+        else if (st === 'out') out++;
+      });
+
+      document.getElementById('stat-total-count').textContent = itemsData.length;
+      document.getElementById('stat-normal-count').textContent = normal;
+      document.getElementById('stat-warning-count').textContent = warning;
+      document.getElementById('stat-critical-count').textContent = critical;
+      document.getElementById('stat-out-count').textContent = out;
+    }
+
+    function renderCharts() {
+      // 1. Category Chart
+      const categoryCounts = {};
+      itemsData.forEach(i => {
+        const cat = i.category || 'อื่นๆ';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+
+      const catLabels = Object.keys(categoryCounts);
+      const catData = Object.values(categoryCounts);
+
+      const ctx1 = document.getElementById('categoryChart')?.getContext('2d');
+      if (ctx1) {
+        if (categoryChartInstance) categoryChartInstance.destroy();
+        categoryChartInstance = new Chart(ctx1, {
+          type: 'doughnut',
+          data: {
+            labels: catLabels.length ? catLabels : ['ไม่มีข้อมูล'],
+            datasets: [{
+              data: catData.length ? catData : [1],
+              backgroundColor: ['#E1306C', '#833AB4', '#F56040', '#FCAF45', '#10B981', '#3B82F6', '#6366F1']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      // 2. Status Chart
+      let normal = 0, warning = 0, critical = 0, out = 0;
+      itemsData.forEach(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3).status;
+        if (st === 'normal') normal++;
+        else if (st === 'warning') warning++;
+        else if (st === 'critical') critical++;
+        else if (st === 'out') out++;
+      });
+
+      const ctx2 = document.getElementById('statusChart')?.getContext('2d');
+      if (ctx2) {
+        if (statusChartInstance) statusChartInstance.destroy();
+        statusChartInstance = new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: ['ปกติ', 'เตือนใกล้หมด', 'วิกฤต', 'พัสดุหมด'],
+            datasets: [{
+              label: 'จำนวนรายการ',
+              data: [normal, warning, critical, out],
+              backgroundColor: ['#10B981', '#F59E0B', '#E11D48', '#94A3B8'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+    }
+
+    function renderRecentFeed() {
+      const container = document.getElementById('recent-feed-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+      const recentItems = [...itemsData].reverse().slice(0, 6);
+
+      if (recentItems.length === 0) {
+        container.innerHTML = `<div class="col-span-full p-6 text-center text-slate-400 text-sm">ยังไม่มีรายการพัสดุ</div>`;
+        return;
+      }
+
+      recentItems.forEach(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3);
+        const card = document.createElement('div');
+        card.className = 'bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col justify-between space-y-3 shadow-sm hover:border-pink-300 transition';
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono font-bold text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">${item.code}</span>
+              <h4 class="font-bold text-sm text-slate-800 mt-1">${item.name}</h4>
+              <p class="text-xs text-slate-500">หมวดหมู่: ${item.category} | ${item.location || 'คลัง'}</p>
+            </div>
+            <span class="text-[11px] px-2 py-1 rounded-lg border ${st.color}">${st.label}</span>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+            <span class="text-slate-500">คงเหลือ: <strong class="text-slate-800 text-sm">${item.quantity}</strong> ${item.unit}</span>
+            <button onclick="openQrModal('${item.id}')" class="text-pink-600 hover:text-pink-700 font-medium flex items-center space-x-1">
+              <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+              <span>QR Code</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventory-table-body');
+      const emptyDiv = document.getElementById('inventory-empty');
+      const searchVal = document.getElementById('inventory-search')?.value?.toLowerCase() || '';
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      let filtered = itemsData.filter(item => {
+        const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
+        const matchesSearch = (item.code || '').toLowerCase().includes(searchVal) ||
+                              (item.name || '').toLowerCase().includes(searchVal) ||
+                              (item.location || '').toLowerCase().includes(searchVal);
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        emptyDiv?.classList.remove('hidden');
+        return;
+      }
+      emptyDiv?.classList.add('hidden');
+
+      filtered.forEach(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3);
+        const isChecked = selectedItemIds.has(item.id);
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+        tr.innerHTML = `
+          <td class="p-3.5 text-center">
+            <input type="checkbox" onchange="toggleSelectItem('${item.id}', this.checked)" ${isChecked ? 'checked' : ''} class="rounded bg-slate-100 border-slate-300 text-pink-600 focus:ring-pink-500">
+          </td>
+          <td class="p-3.5">
+            <div class="font-bold text-slate-800">${item.name}</div>
+            <div class="text-xs text-pink-600 font-mono font-semibold">${item.code}</div>
+          </td>
+          <td class="p-3.5">
+            <span class="px-2.5 py-1 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-200">${item.category}</span>
+          </td>
+          <td class="p-3.5 text-slate-600 text-xs">${item.location || '-'}</td>
+          <td class="p-3.5 text-right font-bold text-slate-800">${item.quantity} <span class="text-xs font-normal text-slate-500">${item.unit}</span></td>
+          <td class="p-3.5 text-center text-xs text-slate-500">
+            <span class="text-amber-600 font-semibold">${item.warning_threshold}</span> / <span class="text-rose-600 font-semibold">${item.critical_threshold}</span>
+          </td>
+          <td class="p-3.5 text-center">
+            <span class="px-2.5 py-1 rounded-lg text-xs border ${st.color}">${st.label}</span>
+          </td>
+          <td class="p-3.5 text-center">
+            <div class="flex items-center justify-center space-x-1.5">
+              <button onclick="openQrModal('${item.id}')" title="แสดง QR Code" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openFormModal('${item.id}')" title="แก้ไข" class="p-1.5 rounded-lg bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-pink-600 transition">
+                <i data-lucide="edit-2" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteItem('${item.id}')" title="ลบ" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateSelectedCount();
+      lucide.createIcons();
+    }
+
+    function renderReportTable() {
+      const tbody = document.getElementById('report-table-body');
+      const filterStatus = document.getElementById('report-filter-status')?.value || 'all';
+      const sortQty = document.getElementById('report-sort-qty')?.value || 'asc';
+      const searchVal = document.getElementById('report-search')?.value?.toLowerCase() || '';
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      let filtered = itemsData.filter(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3).status;
+        const matchesStatus = filterStatus === 'all' || st === filterStatus;
+        const matchesSearch = (item.code || '').toLowerCase().includes(searchVal) ||
+                              (item.name || '').toLowerCase().includes(searchVal) ||
+                              (item.category || '').toLowerCase().includes(searchVal);
+        return matchesStatus && matchesSearch;
+      });
+
+      // Sort by quantity
+      filtered.sort((a, b) => sortQty === 'asc' ? a.quantity - b.quantity : b.quantity - a.quantity);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">ไม่พบข้อมูลรายงานตรงตามเงื่อนไข</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3);
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+        tr.innerHTML = `
+          <td class="p-3.5 font-mono font-semibold text-pink-600">${item.code}</td>
+          <td class="p-3.5 font-bold text-slate-800">${item.name}</td>
+          <td class="p-3.5 text-slate-600">${item.category}</td>
+          <td class="p-3.5 text-slate-600 text-xs">${item.location || '-'}</td>
+          <td class="p-3.5 text-right font-bold text-slate-800">${item.quantity} <span class="text-xs font-normal text-slate-500">${item.unit}</span></td>
+          <td class="p-3.5 text-center">
+            <span class="px-2.5 py-1 rounded-lg text-xs border ${st.color}">${st.label}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterReportByStatus(status) {
+      switchTab('report');
+      const select = document.getElementById('report-filter-status');
+      if (select) {
+        select.value = status;
+        renderReportTable();
+      }
+    }
+
+    function openFormModal(id = null) {
+      isManualCategorySet = false;
+      document.getElementById('auto-cat-badge').classList.add('hidden');
+      updateCategorySelectOptions();
+
+      const modal = document.getElementById('modal-form');
+      const form = document.getElementById('item-form');
+      form.reset();
+
+      if (id) {
+        const item = itemsData.find(i => i.id === id);
+        if (item) {
+          document.getElementById('modal-form-title').innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-pink-600"></i><span>แก้ไขข้อมูลพัสดุ</span>`;
+          document.getElementById('form-item-id').value = item.id;
+          document.getElementById('form-code').value = item.code || '';
+          document.getElementById('form-name').value = item.name || '';
+          
+          const catSelect = document.getElementById('form-category-select');
+          if (Array.from(catSelect.options).some(opt => opt.value === item.category)) {
+            catSelect.value = item.category;
+            document.getElementById('form-category-custom').classList.add('hidden');
+          } else {
+            catSelect.value = 'custom';
+            document.getElementById('form-category-custom').classList.remove('hidden');
+            document.getElementById('form-category-custom').value = item.category || '';
+          }
+
+          document.getElementById('form-location').value = item.location || '';
+          document.getElementById('form-unit').value = item.unit || '';
+          document.getElementById('form-quantity').value = item.quantity ?? 0;
+          document.getElementById('form-warning-threshold').value = item.warning_threshold ?? 10;
+          document.getElementById('form-critical-threshold').value = item.critical_threshold ?? 3;
+          document.getElementById('form-usage-notes').value = item.usage_notes || '';
+        }
+      } else {
+        document.getElementById('modal-form-title').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-pink-600"></i><span>เพิ่มพัสดุใหม่</span>`;
+        document.getElementById('form-item-id').value = '';
+        document.getElementById('form-category-custom').classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeFormModal() {
+      document.getElementById('modal-form').classList.add('hidden');
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-item-id').value;
+      const code = document.getElementById('form-code').value.trim();
+      const name = document.getElementById('form-name').value.trim();
+      
+      const catSelect = document.getElementById('form-category-select').value;
+      const catCustom = document.getElementById('form-category-custom').value.trim();
+      const category = (catSelect === 'custom' ? catCustom : catSelect) || 'อุปกรณ์ทั่วไป';
+
+      const location = document.getElementById('form-location').value.trim();
+      const unit = document.getElementById('form-unit').value.trim();
+      const quantity = parseInt(document.getElementById('form-quantity').value) || 0;
+      const warning_threshold = parseInt(document.getElementById('form-warning-threshold').value) || 10;
+      const critical_threshold = parseInt(document.getElementById('form-critical-threshold').value) || 3;
+      const usage_notes = document.getElementById('form-usage-notes').value.trim();
+
+      const itemPayload = {
+        id: id || Date.now().toString(),
+        code,
+        name,
+        category,
+        location,
+        unit,
+        quantity,
+        warning_threshold,
+        critical_threshold,
+        usage_notes
+      };
+
+      if (id) {
+        const index = itemsData.findIndex(i => i.id === id);
+        if (index !== -1) itemsData[index] = itemPayload;
+      } else {
+        itemsData.unshift(itemPayload);
+      }
+
+      await syncSaveItem(itemPayload);
+      closeFormModal();
+      showToast(id ? 'แก้ไขพัสดุเรียบร้อย' : 'เพิ่มพัสดุใหม่เรียบร้อย');
+      
+      updateDashboardStats();
+      renderCharts();
+      renderInventoryTable();
+      renderReportTable();
+    }
+
+    async function deleteItem(id) {
+      if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการพัสดุนี้?')) return;
+      
+      itemsData = itemsData.filter(i => i.id !== id);
+      selectedItemIds.delete(id);
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('water_warehouse').delete().eq('id', id);
+        } catch(err) { console.error(err); }
+      }
+      saveItemsToStorage();
+      showToast('ลบรายการพัสดุเรียบร้อย');
+
+      updateDashboardStats();
+      renderCharts();
+      renderInventoryTable();
+    }
+
+    function toggleSelectItem(id, checked) {
+      if (checked) selectedItemIds.add(id);
+      else selectedItemIds.delete(id);
+      updateSelectedCount();
+    }
+
+    function toggleSelectAll(masterCb) {
+      const tbody = document.getElementById('inventory-table-body');
+      const checkboxes = tbody.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        cb.checked = masterCb.checked;
+      });
+
+      itemsData.forEach(item => {
+        if (masterCb.checked) selectedItemIds.add(item.id);
+        else selectedItemIds.delete(item.id);
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const countSpan = document.getElementById('selected-count');
+      const btnDeleteSelected = document.getElementById('btn-delete-selected');
+      if (countSpan && btnDeleteSelected) {
+        countSpan.textContent = selectedItemIds.size;
+        if (selectedItemIds.size > 0) btnDeleteSelected.classList.remove('hidden');
+        else btnDeleteSelected.classList.add('hidden');
+      }
+    }
+
+    async function deleteSelectedItems() {
+      if (selectedItemIds.size === 0) return;
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบพัสดุจำนวน ${selectedItemIds.size} รายการที่เลือก?`)) return;
+
+      const idsToDelete = Array.from(selectedItemIds);
+      itemsData = itemsData.filter(i => !selectedItemIds.has(i.id));
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('water_warehouse').delete().in('id', idsToDelete);
+        } catch(err) { console.error(err); }
+      }
+
+      selectedItemIds.clear();
+      saveItemsToStorage();
+      showToast('ลบรายการที่เลือกเรียบร้อย');
+
+      updateDashboardStats();
+      renderCharts();
+      renderInventoryTable();
+    }
+
+    async function confirmClearAll() {
+      if (!confirm('⚠️ คำเตือน: คุณกำลังจะลบรายการพัสดุ "ทั้งหมด" ในระบบ!\nต้องการดำเนินการต่อหรือไม่?')) return;
+
+      itemsData = [];
+      selectedItemIds.clear();
+
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('water_warehouse').delete().neq('code', '');
+        } catch(err) { console.error(err); }
+      }
+
+      saveItemsToStorage();
+      showToast('ล้างข้อมูลทั้งหมดเรียบร้อย');
+
+      updateDashboardStats();
+      renderCharts();
+      renderInventoryTable();
+    }
+
+    function openQrModal(itemId) {
+      const item = itemsData.find(i => i.id === itemId);
+      if (!item) return;
+
+      currentQrItemId = itemId;
+      document.getElementById('qr-modal-title').textContent = item.name;
+      document.getElementById('qr-modal-code').textContent = `หมายเลขพัสดุ: ${item.code}`;
+      document.getElementById('qr-modal-details').textContent = `ตำแหน่ง: ${item.location || '-'} | คงเหลือ: ${item.quantity} ${item.unit}`;
+
+      const qrContainer = document.getElementById('qr-code-preview');
+      qrContainer.innerHTML = '';
+      
+      new QRCode(qrContainer, {
+        text: item.code,
+        width: 160,
+        height: 160,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('modal-qr').classList.remove('hidden');
+    }
+
+    function closeQrModal() {
+      document.getElementById('modal-qr').classList.add('hidden');
+    }
+
+    function downloadQrCode() {
+      const img = document.querySelector('#qr-code-preview img');
+      if (!img) return;
+
+      const a = document.createElement('a');
+      a.href = img.src;
+      a.download = `QR_${currentQrItemId || 'code'}.png`;
+      a.click();
+    }
+
+    function printQrCode() {
+      const item = itemsData.find(i => i.id === currentQrItemId);
+      const img = document.querySelector('#qr-code-preview img');
+      if (!item || !img) return;
+
+      const printWin = window.open('', '_blank');
+      printWin.document.write(`
+        <html>
+          <head>
+            <title>พิมพ์ QR Code - ${item.name}</title>
+            <style>
+              body { font-family: sans-serif; text-align: center; padding: 20px; }
+              .card { border: 2px solid #333; padding: 20px; border-radius: 12px; display: inline-block; }
+              img { width: 180px; height: 180px; }
+              h2 { margin: 10px 0 5px 0; font-size: 18px; }
+              p { margin: 3px 0; font-size: 12px; color: #555; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <img src="${img.src}">
+              <h2>${item.name}</h2>
+              <p><strong>หมายเลข: ${item.code}</strong></p>
+              <p>ตำแหน่ง: ${item.location || '-'} | หมวดหมู่: ${item.category}</p>
+            </div>
+            <script>window.onload = function() { window.print(); window.close(); }<\/script>
+          </body>
+        </html>
+      `);
+      printWin.document.close();
+    }
+
+    function openScanModal() {
+      document.getElementById('modal-scan').classList.remove('hidden');
+      
+      if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("reader");
+      }
+      
+      html5QrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          handleScanSuccess(decodedText);
+        },
+        () => {}
+      ).catch(err => {
+        console.warn("Unable to start camera scan:", err);
+      });
+      lucide.createIcons();
+    }
+
+    function closeScanModal() {
+      if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {});
+      }
+      document.getElementById('modal-scan').classList.add('hidden');
+    }
+
+    function handleScanSuccess(scannedCode) {
+      closeScanModal();
+      const found = itemsData.find(i => i.code.toLowerCase() === scannedCode.toLowerCase());
+      
+      if (found) {
+        openFormModal(found.id);
+        showToast(`พบพัสดุ: ${found.name}`);
+      } else {
+        if (confirm(`ไม่พบพัสดุรหัส "${scannedCode}" ในคลัง\nต้องการเพิ่มพัสดุใหม่ด้วยรหัสนี้หรือไม่?`)) {
+          openFormModal();
+          document.getElementById('form-code').value = scannedCode;
+        }
+      }
+    }
+
+    function handleQrFileInput(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const html5Qr = new Html5Qrcode("reader");
+      html5Qr.scanFile(file, true)
+        .then(decodedText => {
+          handleScanSuccess(decodedText);
+        })
+        .catch(err => {
+          showToast('ไม่พบ QR Code ในภาพ หรือไฟล์ไม่ถูกต้อง');
+        });
+    }
+
+    function triggerExcelImport() {
+      document.getElementById('excel-file-input')?.click();
+    }
+
+    function handleExcelImport(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(firstSheet);
+
+          let importedCount = 0;
+          for (let row of json) {
+            const code = row['หมายเลขพัสดุ'] || row['รหัสพัสดุ'] || row['Code'] || `IMPORT-${Date.now()}-${Math.floor(Math.random()*100)}`;
+            const name = row['ชื่อพัสดุ'] || row['ชื่อรายการ'] || row['Name'] || 'พัสดุไม่ระบุชื่อ';
+            let category = row['หมวดหมู่'] || row['ประเภท'] || row['Category'];
+
+            // Auto detect category if missing
+            if (!category) {
+              const lower = name.toLowerCase();
+              if (lower.includes('pvc')) category = 'PVC';
+              else if (lower.includes('เหล็ก')) category = 'เหล็ก';
+              else if (lower.includes('pe')) category = 'PE';
+              else if (lower.includes('pb')) category = 'PB';
+              else if (lower.includes('ไฟ')) category = 'อุปกรณ์ไฟฟ้า';
+              else category = 'อุปกรณ์ทั่วไป';
+            }
+
+            const itemPayload = {
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+              code: String(code),
+              name: String(name),
+              category: String(category),
+              location: String(row['ตำแหน่งจัดเก็บ'] || row['ตำแหน่ง'] || row['Location'] || 'คลังใหญ่'),
+              unit: String(row['หน่วยนับ'] || row['Unit'] || 'ชิ้น'),
+              quantity: parseInt(row['จำนวนคงเหลือ'] || row['จำนวน'] || row['Quantity']) || 0,
+              warning_threshold: parseInt(row['ขั้นต่ำเตือน'] || row['WarningThreshold']) || 10,
+              critical_threshold: parseInt(row['ขั้นต่ำวิกฤต'] || row['CriticalThreshold']) || 3,
+              usage_notes: String(row['สถิติการใช้งาน'] || row['หมายเหตุ'] || '')
+            };
+
+            itemsData.unshift(itemPayload);
+            await syncSaveItem(itemPayload);
+            importedCount++;
+          }
+
+          showToast(`นำเข้าข้อมูลสำเร็จ ${importedCount} รายการ`);
+          updateDashboardStats();
+          renderCharts();
+          renderInventoryTable();
+          renderReportTable();
+        } catch(err) {
+          console.error(err);
+          showToast('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel/CSV');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      e.target.value = '';
+    }
+
+    function exportToExcel() {
+      if (itemsData.length === 0) {
+        showToast('ไม่มีข้อมูลพัสดุในคลังให้ส่งออก');
+        return;
+      }
+
+      const exportRows = itemsData.map(item => {
+        const st = getItemStatus(item.quantity ?? 0, item.warning_threshold ?? 10, item.critical_threshold ?? 3);
+        return {
+          'หมายเลขพัสดุ': item.code,
+          'ชื่อพัสดุ': item.name,
+          'หมวดหมู่': item.category,
+          'ตำแหน่งจัดเก็บ': item.location || '',
+          'หน่วยนับ': item.unit,
+          'จำนวนคงเหลือ': item.quantity,
+          'ขั้นต่ำเตือนใกล้หมด': item.warning_threshold,
+          'ขั้นต่ำเตือนวิกฤต': item.critical_threshold,
+          'สถานะ': st.label,
+          'สถิติการใช้งาน/หมายเหตุ': item.usage_notes || ''
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "พัสดุคงเหลือ");
+      XLSX.writeFile(wb, `WATER_SUPPLY_INVENTORY_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast('ส่งออกไฟล์ Excel เรียบร้อย');
+    }
+
+    function initSupabaseFromLocal() {
+      const url = localStorage.getItem('wsw_sb_url');
+      const key = localStorage.getItem('wsw_sb_key');
+
+      if (url && key && window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(url, key);
+          updateDbBadge(true);
+        } catch(e) {
+          console.error(e);
+          updateDbBadge(false);
+        }
+      } else {
+        updateDbBadge(false);
+      }
+    }
+
+    function updateDbBadge(isConnected) {
+      const badgeText = document.getElementById('db-status-text');
+      const modeText = document.getElementById('settings-db-mode');
+
+      if (isConnected) {
+        if (badgeText) badgeText.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="text-emerald-600 font-semibold">Supabase Connected</span>`;
+        if (modeText) { modeText.textContent = 'Supabase Cloud Storage'; modeText.className = 'font-semibold text-emerald-600'; }
+      } else {
+        if (badgeText) badgeText.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span class="text-amber-600 font-semibold">LocalStorage</span>`;
+        if (modeText) { modeText.textContent = 'LocalStorage Mode'; modeText.className = 'font-semibold text-amber-600'; }
+      }
+    }
+
+    async function loadItems() {
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('water_warehouse').select('*').order('created_at', { ascending: false });
+          if (!error && data) {
+            itemsData = data;
+            renderInventoryTable();
+            updateDashboardStats();
+            renderCharts();
+            return;
+          }
+        } catch(err) {
+          console.warn('Supabase fetch failed, falling back to LocalStorage', err);
+        }
+      }
+
+      // LocalStorage fallback
+      const local = localStorage.getItem('wsw_items_data');
+      if (local) {
+        try {
+          itemsData = JSON.parse(local);
+        } catch(e) {
+          itemsData = INITIAL_ITEMS;
+        }
+      } else {
+        itemsData = INITIAL_ITEMS;
+        saveItemsToStorage();
+      }
+
+      renderInventoryTable();
+      updateDashboardStats();
+      renderCharts();
+    }
+
+    function saveItemsToStorage() {
+      localStorage.setItem('wsw_items_data', JSON.stringify(itemsData));
+    }
+
+    async function syncSaveItem(item) {
+      saveItemsToStorage();
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('water_warehouse').upsert(item);
+        } catch(err) {
+          console.error('Supabase sync error:', err);
+        }
+      }
+    }
+
+    function saveSupabaseConfig(e) {
+      e.preventDefault();
+      const url = document.getElementById('sb-url-input').value.trim();
+      const key = document.getElementById('sb-key-input').value.trim();
+
+      if (!url || !key) {
+        showToast('กรุณากรอกทั้ง URL และ Key');
+        return;
+      }
+
+      localStorage.setItem('wsw_sb_url', url);
+      localStorage.setItem('wsw_sb_key', key);
+
+      initSupabaseFromLocal();
+      loadItems();
+      showToast('เชื่อมต่อ Supabase เรียบร้อย');
+    }
+
+    function disconnectSupabase() {
+      localStorage.removeItem('wsw_sb_url');
+      localStorage.removeItem('wsw_sb_key');
+      supabaseClient = null;
+      document.getElementById('sb-url-input').value = '';
+      document.getElementById('sb-key-input').value = '';
+      updateDbBadge(false);
+      loadItems();
+      showToast('เปลี่ยนเป็นโหมด LocalStorage เรียบร้อย');
+    }
+
+    function copySqlScript() {
+      const sqlText = `-- สร้างตารางพัสดุประปา WATER SUPPLY WAREHOUSE
+CREATE TABLE IF NOT EXISTS water_warehouse (
+    id UUID PRIMARY KEY DEFAULT gen_random_policy_uuid(),
+    code VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL DEFAULT 'อุปกรณ์ทั่วไป',
+    location VARCHAR(100) DEFAULT 'คลังใหญ่',
+    unit VARCHAR(50) DEFAULT 'ชิ้น',
+    quantity INT DEFAULT 0,
+    warning_threshold INT DEFAULT 10,
+    critical_threshold INT DEFAULT 3,
+    usage_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE water_warehouse ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow All Access" ON water_warehouse FOR ALL USING (true) WITH CHECK (true);`;
+
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = sqlText;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+
+      const textSpan = document.getElementById('copy-sql-text');
+      if (textSpan) textSpan.textContent = 'คัดลอกเรียบร้อย!';
+      setTimeout(() => { if (textSpan) textSpan.textContent = 'คัดลอก SQL Script'; }, 2000);
+      showToast('คัดลอก SQL Script สำหรับ Supabase เรียบร้อย');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      if (!toast || !toastMsg) return;
+
+      toastMsg.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    window.onload = function() {
+      loadCustomCategories();
+      initSupabaseFromLocal();
+      loadItems();
+      switchTab('feed');
+      
+      const url = localStorage.getItem('wsw_sb_url');
+      const key = localStorage.getItem('wsw_sb_key');
+      if (url) document.getElementById('sb-url-input').value = url;
+      if (key) document.getElementById('sb-key-input').value = key;
+
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
